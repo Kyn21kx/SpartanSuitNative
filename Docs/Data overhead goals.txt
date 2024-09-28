@@ -1,0 +1,15 @@
+Data overhead, assuming MotionData struct is 32B in memory
+Assume 32 joints
+------------
+Network data overhead:
+60kB per second per joint @ 60fps
+208MB per hour @ 60fps
+
+Note: Add another 64 bits per packet due to UDP's datagram requirements
+
+------------
+File data overhead (we can fucking compress if we need to):
+Assume a 30% compression rate:
+145.6MB per hour @ 60fps
+------------
+
