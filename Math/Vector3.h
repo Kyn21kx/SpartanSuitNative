@@ -12,12 +12,12 @@ namespace SpartanSuit {
 		
 		Vector3(float x, float y, float z);
 
-		static inline constexpr Vector3 Zero() {
-			return Vector3(0, 0, 0);
+		static inline Vector3 Zero() {
+			return Vector3{ 0.0f, 0.0f, 0.0f };
 		}
 
-		static inline constexpr Vector3 One() {
-			return Vector3(1, 1, 1);
+		static inline Vector3 One() {
+			return Vector3{ 1.0f, 1.0f, 1.0f};
 		}
 	};
 }

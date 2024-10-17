@@ -1,11 +1,5 @@
 #include "NetworkDefinitions.h"
-
-#ifdef _WIN32
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#else
-//Unix equivalent headers
-#endif
+#include <cstdio>
 
 constexpr int32_t MAX_LINE_BUFFER_BYTES = 1024;
 
@@ -18,9 +12,6 @@ Socket::Socket(int32_t port)
 
 Error SpartanSuit::Socket::Init()
 {
-	sockaddr_in clientAddress = {};
-	sockaddr_in serverAddress = {};
-
 	char buffer[MAX_LINE_BUFFER_BYTES];
 
 	this->m_fileDescriptor = socket(AF_INET, SOCK_DGRAM, 0);
@@ -28,25 +19,50 @@ Error SpartanSuit::Socket::Init()
 		return Error::NetworkInitializationError;
 	}
 	// Filling server information 
-	serverAddress.sin_family = AF_INET; // IPv4 
-	serverAddress.sin_addr.s_addr = INADDR_ANY;
-	serverAddress.sin_port = htons(this->m_port);
+	this->m_serverAddress.sin_family = AF_INET; // IPv4 
+	this->m_serverAddress.sin_addr.s_addr = INADDR_ANY;
+	this->m_serverAddress.sin_port = htons(this->m_port);
 
 	//Bind the socket to the address of the server
-	const auto* addressPtr = reinterpret_cast<const sockaddr*>(&serverAddress);
-	int32_t rc = bind(this->m_fileDescriptor, addressPtr, sizeof(serverAddress));
+	int32_t rc = bind(this->m_fileDescriptor, this->GetServerAddressPointer(), sizeof(m_serverAddress));
 	if (rc < 0) {
 		return Error::NetworkBindingError;
 	}
 
-	socklen_t len = sizeof(clientAddress);  //len is value/result 
-	auto* clientAddressPtr = reinterpret_cast<sockaddr*>(&clientAddress);
+	return Error::Ok;
+}
+
+Error Socket::TryPoll(bool* receivedData, char* outBuffer, size_t length)
+{
+	*receivedData = false;
+
+	socklen_t len = sizeof(m_clientAddress);  //len is value/result 
 	int32_t n = recvfrom(
-		this->m_fileDescriptor, 
-		buffer, 
-		MAX_LINE_BUFFER_BYTES, 
-		MSG_WAITALL, 
-		clientAddressPtr, 
+		this->m_fileDescriptor,
+		outBuffer,
+		length,
+		MSG_WAITALL,
+		this->GetClientAddressPointer(),
 		&len
 	);
+
+	//Null terminate the UDP buffer
+	if (n >= length) {
+		return Error::OutOfBoundsError;
+	}
+	outBuffer[length] = 0;
+	fprintf(stdout, "Datagram: %s\n", outBuffer);
+	sendto(this->m_fileDescriptor, outBuffer, MAX_LINE_BUFFER_BYTES, 0, this->GetClientAddressPointer(), len);
+
+	return Error::Ok;
+}
+
+sockaddr* Socket::GetClientAddressPointer()
+{
+	return reinterpret_cast<sockaddr*>(&this->m_clientAddress);
+}
+
+const sockaddr* Socket::GetServerAddressPointer() const
+{
+	return reinterpret_cast<const sockaddr*>(&this->m_serverAddress);
 }

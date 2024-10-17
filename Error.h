@@ -3,6 +3,9 @@ namespace SpartanSuit {
 	enum class Error : int32_t {
 		Ok,
 		NetworkInitializationError,
-		NetworkBindingError
+		NetworkBindingError,
+		OutOfBoundsError,
+		TimeoutError,
+		InternalError
 	};
 }
