@@ -1,16 +1,16 @@
 #include "NetworkDefinitions.h"
 #include <cstdio>
+#include <winsock2.h>
 
 constexpr int32_t MAX_LINE_BUFFER_BYTES = 1024;
 
-using namespace SpartanSuit;
 
-Socket::Socket(int32_t port)
+SpartanSuit::Socket::Socket(int32_t port)
 {
 	this->m_port = port;
 }
 
-Error SpartanSuit::Socket::Init()
+SpartanSuit::Error SpartanSuit::Socket::Init()
 {
 	char buffer[MAX_LINE_BUFFER_BYTES];
 
@@ -32,7 +32,7 @@ Error SpartanSuit::Socket::Init()
 	return Error::Ok;
 }
 
-Error Socket::TryPoll(bool* receivedData, char* outBuffer, size_t length)
+SpartanSuit::Error SpartanSuit::Socket::TryPoll(bool* receivedData, char* outBuffer, size_t length)
 {
 	*receivedData = false;
 
@@ -40,29 +40,39 @@ Error Socket::TryPoll(bool* receivedData, char* outBuffer, size_t length)
 	int32_t n = recvfrom(
 		this->m_fileDescriptor,
 		outBuffer,
-		length,
-		MSG_WAITALL,
+		length - 1,
+		0,
 		this->GetClientAddressPointer(),
 		&len
 	);
 
+	printf("Bytes received: %d\n", n);
+	
+	if (n < 0) {
+		int32_t err = WSAGetLastError();
+		printf("Error code: %d\n", err);
+	}
+	
 	//Null terminate the UDP buffer
 	if (n >= length) {
 		return Error::OutOfBoundsError;
 	}
 	outBuffer[length] = 0;
 	fprintf(stdout, "Datagram: %s\n", outBuffer);
-	sendto(this->m_fileDescriptor, outBuffer, MAX_LINE_BUFFER_BYTES, 0, this->GetClientAddressPointer(), len);
+	sendto(this->m_fileDescriptor, outBuffer, n, 0, this->GetClientAddressPointer(), len);
 
+	*receivedData = n > 0;
+
+	
 	return Error::Ok;
 }
 
-sockaddr* Socket::GetClientAddressPointer()
+sockaddr* SpartanSuit::Socket::GetClientAddressPointer()
 {
 	return reinterpret_cast<sockaddr*>(&this->m_clientAddress);
 }
 
-const sockaddr* Socket::GetServerAddressPointer() const
+const sockaddr* SpartanSuit::Socket::GetServerAddressPointer() const
 {
 	return reinterpret_cast<const sockaddr*>(&this->m_serverAddress);
 }

@@ -12,6 +12,8 @@
 namespace SpartanSuit {
 	class Socket {
 	public:
+		Socket() = default;
+		
 		Socket(int32_t port);
 		
 		Error Init();

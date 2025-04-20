@@ -1,1 +1,10 @@
 .vs
+.cache/**
+build/**
+.hx
+*.obj
+*.tlog
+*.pdb
+*.vcxproj*
+compile_commands.json
+
